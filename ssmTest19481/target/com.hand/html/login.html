@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>登录界面</title>
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://cdn.bootcss.com/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <style type="text/css">
+        body{
+            background-image: url("/static/bgImg.jpg");
+            background-position: center center;
+            background-attachment: fixed;
+            background-size: cover;
+            background-repeat: no-repeat;
+        }
+    </style>
+</head>
+<body>
+<!--搭建导航栏-->
+<div class="row">
+    <div class="col-md-1"></div>
+    <div class="col-md-11"><h2>19481-敖杰</h2></div>
+</div>
+
+<div class="row" style="margin-top: 50px; margin-bottom: 10px">
+    <div class="col-xs-6 col-md-4"></div>
+    <div class="col-xs-6 col-md-4">
+        <h2>电影租赁管理系统</h2>
+    </div>
+    <div class="col-xs-6 col-md-4"></div>
+</div>
+<form class="form-horizontal" method="post">
+    <div class="form-group">
+        <label for="firstName" class="col-sm-4 control-label" style="color: snow">firstName</label>
+        <div class="col-sm-3">
+            <input type="text" class="form-control" id="firstName" name="firstName" placeholder="请输入用户的firstName">
+            <span class="help-block"></span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="lastName" class="col-sm-4 control-label"  style="color: snow">lastName</label>
+        <div class="col-sm-3">
+            <input type="text" class="form-control" id="lastName" name="lastName" placeholder="请输入用户的lastName">
+            <span class="help-block"></span>
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-sm-offset-4 col-sm-5">
+            <button type="button" class="btn btn-primary" id="login_btn">登录</button>
+        </div>
+    </div>
+</form>
+<script type="text/javascript">
+    //前端校验
+    function show_validate_msg(ele,status,msg){
+        //清除当前元素的校验状态
+        $(ele).parent().removeClass("has-success has-error");
+        $(ele).next("span").text("");
+        if(status=="success"){
+            $(ele).parent().addClass("has-success");
+            $(ele).next("span").text(msg);
+        }else if(status="error"){
+            $(ele).parent().addClass("has-error");
+            $(ele).next("span").text(msg);
+        }
+    }
+    $("#login_btn").click(function () {
+        var firstName = $("#firstName").val();
+        var lastName = $("#lastName").val();
+        if (firstName==""){
+            show_validate_msg("#firstName","error","firstName不能为空");
+            return false;
+        }else {
+            show_validate_msg("#firstName","success","格式正确");
+        }
+        if(lastName==""){
+            show_validate_msg("#lastName","error","lastName不能为空");
+            return false;
+        }else{
+            show_validate_msg("#lastName","success","格式正确");
+        }
+        $.ajax({
+            url:"/loginUser",
+            type:"POST",
+            contentType: 'application/json',
+            data:JSON.stringify({"firstName":firstName,"lastName":lastName}),
+            success:function (result) {
+                if(result.code==100){
+                    //登录成功
+                    sessionStorage.setItem('name', firstName+" "+lastName);
+                    window.location.href="index.html";
+                }else{
+                    //登录失败
+                    window.location.href="login.html"
+                }
+            }
+        });
+    });
+</script>
+</body>
+</html>

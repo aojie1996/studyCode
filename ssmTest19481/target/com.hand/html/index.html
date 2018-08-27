@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>主页面</title>
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://cdn.bootcss.com/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+<body>
+<!-- 员工修改的模态框 -->
+<div class="modal fade" id="cusUpdateModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">客户信息修改</h4>
+            </div>
+            <div class="modal-body">
+                <form class="form-horizontal">
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">firstName</label>
+                        <div class="col-sm-10">
+                            <input type="text"  name="firstName" class="form-control" id="firstName_update_input" placeholder="firstName">
+                            <span class="help-block"></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">lastName</label>
+                        <div class="col-sm-10">
+                            <input type="text" name="lastName" class="form-control" id="lastName_update_input" placeholder="lastName">
+                            <span class="help-block"></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">email</label>
+                        <div class="col-sm-10">
+                            <input type="text" name="email" class="form-control" id="email_update_input" placeholder="email">
+                            <span class="help-block"></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-2 control-label">address</label>
+                        <div class="col-sm-10">
+                            <!-- 部门提交部门id即可 -->
+                            <select class="form-control" name="addressId">
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" id="cus_update_btn" email_val="success">更新</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row" style="background-color: lightskyblue">
+    <div class="col-md-3 col-md-offset-1"><h2>电影租赁管理系统</h2></div>
+    <div class="col-md-5"></div>
+    <div class="col-md-3" style="margin-top: 20px">
+        <h4>欢迎您，<span id="username" style="color: red"></span></h4><p></p>
+        <button type="button" class="btn btn-warning" id="exit">退出系统</button>
+    </div>
+</div>
+<nav class="navbar navbar-default navbar-static-top col-xs-2" role="navigation" style="height: 530px;">
+    <div class="navbar-default navbar-collapse" style="padding-top: 10px" id="slider_sub">
+        <ul class="nav" id="left_nav">
+            <li class="btn-group-vertical" style="padding-bottom: 10px">
+                <button style="margin-bottom: 10px;" type="button" class="btn default" id="userListBtn">
+                    Customer管理
+                    </button>
+                <button type="button" class="btn default" id="selfMegBtn">
+                    Film设置
+                 </button>
+                    </li>
+        </ul>
+    </div>
+</nav>
+<div id="show" class="navbar navbar-default navbar-static-top col-xs-10" style="text-align: center">
+
+</div>
+
+    <script>
+        $("#userListBtn").click(function () {
+              var url="customerList.html";
+              $("#show").load(url);
+        })
+
+        //把所有的地址信息显示下下拉框中
+        function getAddress(ele) {
+            //清空之前下拉框的值
+            $(ele).empty();
+            $.ajax({
+                url:"/address",
+                type:"post",
+                success:function (result) {
+                    //把地址信息打印到下拉框中
+                    $.each(result.extend.address,function () {
+                        var optionEle=$("<option></option>").append(this.address).attr("value",this.addressId);
+                        optionEle.appendTo(ele);
+                    })
+                }
+            })
+        }
+
+        //判断session作用域中的值，来拦截未登录的用户进入系统
+        $(function () {
+            //获取session中保存的访问者全名
+            var visitorName = sessionStorage.getItem("name");
+            if (visitorName == null) {
+                alert("未登录或登录超时,请先进行登录!");
+                location.href = "login.html";
+            } else {
+                $("#username").html(visitorName);
+            }
+        });
+        //显示校验信息的函数
+        function show_validate_msg(ele,status,msg){
+            //清除当前元素的校验状态
+            $(ele).parent().removeClass("has-success has-error");
+            $(ele).next("span").text("");
+            if(status=="success"){
+                $(ele).parent().addClass("has-success");
+                $(ele).next("span").text(msg);
+            }else if(status="error"){
+                $(ele).parent().addClass("has-error");
+                $(ele).next("span").text(msg);
+            }
+        }
+        //清空表单样式及内容
+        function reset_form(ele){
+            //因为jQuery没有对象
+            //$(ele)[0].reset();
+            //清空表单样式
+            $(ele).find("*").removeClass("has-error has-success");
+            $(ele).find(".help-block").text("");
+            //$(ele).find("")
+        }
+        //点击Film设置，进入电影管理界面
+        $("#selfMegBtn").click(function () {
+            var url="filmList.html";
+            $("#show").load(url);
+        })
+        //点击退出系统
+        $("#exit").click(function () {
+            sessionStorage.clear();
+            alert("退出系统成功")
+            location.href = "login.html";
+        })
+    </script>
+</body>
+</html>

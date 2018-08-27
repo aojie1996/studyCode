@@ -1,0 +1,123 @@
+<div id="addCusModel">
+<form class="form-horizontal">
+    <div class="row">
+        <div class="col-md-4"><h2>创建Customer</h2></div>
+        <div class="col-md-8"></div>
+    </div>
+    <div class="row">
+        <div class="col-md-8"><h4>基本信息</h4></div>
+        <div class="col-md-4"></div>
+    </div>
+    <div class="form-group">
+        <label for="add_firstName" class="col-sm-2 control-label">firstName</label>
+        <div class="col-sm-5">
+            <input type="text" class="form-control" id="add_firstName" name="firstName" placeholder="firstName">
+            <span class="help-block"></span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="add_lastName" class="col-sm-2 control-label">lastName</label>
+        <div class="col-sm-5">
+            <input type="text" class="form-control" id="add_lastName" name="lastName" placeholder="lastName">
+            <span class="help-block"></span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="add_Email" class="col-sm-2 control-label">Email</label>
+        <div class="col-sm-5">
+            <input type="email" class="form-control" id="add_Email" name="email" placeholder="Email@qq.com">
+            <span class="help-block"></span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="add_address" class="col-sm-2 control-label">Address</label>
+        <div class="col-sm-5">
+            <select class="form-control" id="add_address" name="addressId"></select>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="col-sm-2 control-label"></label>
+        <div class="col-sm-5">
+            <button type="button" class="btn btn-info" id="cus_save_btn">新建</button>
+            <button type="button" class="btn btn-default" id="cus_cancel_btn">取消</button>
+        </div>
+    </div>
+</form>
+</div>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            getAddress("#add_address");
+        });
+
+        //点击新增按钮事件
+        $("#cus_save_btn").click(function () {
+            //表单验证
+            if(!check_Cus()){
+                return false;
+            }
+            if($(this).attr("email_val")=="error"){
+                return false;
+            }
+            var data=$("#addCusModel form").serialize();
+            $.ajax({
+                url:"/addCustomer",
+                type:"POST",
+                data:data,
+                success:function (result) {
+                    if(result.code==100){
+                        alert("添加成功");
+//                        var url="customerList.html";
+//                        $("#show").load(url);
+                        location.reload();
+                    }else{
+                        alert("添加失败");
+                    }
+                }
+            });
+        });
+
+        //点击取消返回到上一页面
+        $("#cus_cancel_btn").click(function () {
+            var url="customerList.html";
+            $("#show").load(url);
+        })
+
+        //新增的信息校验
+        function check_Cus() {
+            var firstName = $("#add_firstName").val();
+            var lastName=$("#add_lastName").val();
+            var Email=$("#add_Email").val();
+            if(firstName==""){
+                show_validate_msg("#add_firstName","error","firstName不能为空");
+                return false;
+            }else{
+                show_validate_msg("#add_firstName","success","格式正确");
+            }
+            if(lastName==""){
+                show_validate_msg("#add_lastName","error","lastName不能为空");
+                return false;
+            }else{
+                show_validate_msg("#add_lastName","success","格式正确");
+            }
+            if(Email==""){
+                show_validate_msg("#add_Email","error","Email不能为空");
+                return false;
+            }
+            return true;
+        }
+        //新增的邮箱格式的校验
+        $("#add_Email").change(function () {
+            var Email=$("#add_Email").val();
+            var regEmail=/[\w!#$%&'*+/=?^_`{|}~-]+(?:\.[\w!#$%&'*+/=?^_`{|}~-]+)*@(?:[\w](?:[\w-]*[\w])?\.)+[\w](?:[\w-]*[\w])?/;
+            if(!regEmail.test(Email)){
+                show_validate_msg("#add_Email","error","输入的邮箱格式不正确");
+                $("#cus_save_btn").attr("email_val","error");
+            }else{
+                show_validate_msg("#add_Email","success","格式正确");
+                $("#cus_save_btn").attr("email_val","success");
+            }
+
+        })
+
+    </script>

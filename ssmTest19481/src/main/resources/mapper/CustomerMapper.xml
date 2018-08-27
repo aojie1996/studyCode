@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hand.mapper.CustomerMapper">
+    <resultMap id="BaseResultMap" type="com.hand.dto.Customer">
+        <id column="customer_id" property="customerId" />
+        <result column="first_name" property="firstName" />
+        <result column="last_name" property="lastName" />
+        <result column="email" property="email" />
+        <result column="address_id" property="addressId" />
+        <result column="last_update" property="lastUpdate" />
+    </resultMap>
+
+    <resultMap type="com.hand.dto.Customer" id="WithAddressResultMap">
+        <id column="customer_id" property="customerId" />
+        <result column="first_name" property="firstName" />
+        <result column="last_name" property="lastName" />
+        <result column="email" property="email" />
+        <result column="address_id" property="addressId" />
+        <result column="last_update" property="lastUpdate" />
+        <!-- 指定联合查询出的地址字段的封装 -->
+        <association property="address" javaType="com.hand.dto.Address">
+            <id column="address_id" property="addressId"/>
+            <result column="address" property="address"/>
+        </association>
+    </resultMap>
+    <select id="selectByfirstName" resultMap="BaseResultMap" parameterType="String">
+    select customer_id,first_name,last_name,email,address_id,last_update from customer where first_name=#{firstName}
+    </select>
+    <select id="selectCustomerList" resultMap="WithAddressResultMap">
+        select c.customer_id,c.first_name,c.last_name,c.email,a.address,c.last_update
+        from customer c,address a where a.address_id=c.address_id ORDER BY c.customer_id
+    </select>
+
+    <insert id="insertCust" parameterType="com.hand.dto.Customer">
+        INSERT into customer(first_name,last_name,email,address_id,store_id,create_date)
+         values(#{firstName},#{lastName},#{email},#{addressId},1,NOW())
+    </insert>
+    <select id="selectById" resultMap="BaseResultMap" parameterType="java.lang.Integer">
+        select customer_id,first_name,last_name,email,address_id,last_update
+        from customer where customer_id=#{customerId}
+    </select>
+    <update id="updateById" parameterType="com.hand.dto.Customer">
+       update customer set first_name=#{firstName},last_name=#{lastName},email=#{email},address_id=#{addressId},last_update=NOW()
+       where customer_id=#{customerId}
+    </update>
+    <delete id="deleteCustById" parameterType="java.lang.Integer">
+        DELETE from customer where customer_id=#{customer_id}
+    </delete>
+</mapper>

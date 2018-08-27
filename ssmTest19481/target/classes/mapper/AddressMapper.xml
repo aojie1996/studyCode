@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hand.mapper.AddressMapper">
+    <resultMap id="BaseResultMap" type="com.hand.dto.Address">
+        <id column="address_id" property="addressId" />
+        <result column="address" property="address" />
+    </resultMap>
+    <select id="selectAllAddress" resultMap="BaseResultMap">
+         select address,address_id from address ORDER BY address_id
+    </select>
+</mapper>
