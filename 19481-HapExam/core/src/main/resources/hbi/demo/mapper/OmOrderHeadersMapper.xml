@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="hbi.demo.mapper.OmOrderHeadersMapper">
+    <resultMap id="BaseResultMap" type="hbi.demo.dto.OmOrderHeaders">
+        <result column="HEADER_ID" property="headerId" jdbcType="DECIMAL" />
+        <result column="ORDER_NUMBER" property="orderNumber" jdbcType="VARCHAR" />
+        <result column="COMPANY_ID" property="companyId" jdbcType="DECIMAL" />
+        <result column="ORDER_DATE" property="orderDate" jdbcType="DATE" />
+        <result column="ORDER_STATUS" property="orderStatus" jdbcType="VARCHAR" />
+        <result column="CUSTOMER_ID" property="customerId" jdbcType="DECIMAL" />
+    </resultMap>
+
+    <resultMap id="MySelectCompanyAndCustMap" type="hbi.demo.dto.OmOrderHeaders">
+        <result column="HEADER_ID" property="headerId" jdbcType="DECIMAL" />
+        <result column="ORDER_NUMBER" property="orderNumber" jdbcType="VARCHAR" />
+        <result column="COMPANY_ID" property="companyId" jdbcType="DECIMAL" />
+        <result column="ORDER_DATE" property="orderDate" jdbcType="DATE" />
+        <result column="ORDER_STATUS" property="orderStatus" jdbcType="VARCHAR" />
+        <result column="CUSTOMER_ID" property="customerId" jdbcType="DECIMAL" />
+        <result property="companyName" column="COMPANY_NAME" jdbcType="VARCHAR"></result>
+        <result property="customerName" column="CUSTOMER_NAME" jdbcType="VARCHAR"></result>
+        <result property="inventoryItemId" column="INVENTORY_ITEM_ID" jdbcType="DECIMAL"></result>
+    </resultMap>
+
+    <select id="selectCustAndCompany" resultMap="MySelectCompanyAndCustMap"
+            parameterType="hbi.demo.dto.OmOrderHeaders">
+    SELECT
+    headers.header_id,
+    headers.company_id,
+    headers.customer_id,
+    headers.order_number,
+    headers.order_date,
+    headers.order_status,
+    headers.creation_date,
+    companys.company_name,
+    customers.customer_name
+    FROM
+    hap_om_order_headers  headers
+    LEFT JOIN hap_org_companys companys
+    ON headers.company_id = companys.company_id
+    LEFT JOIN  hap_ar_customers customers
+    ON headers.customer_id = customers.customer_id
+--     LEFT JOIN hap_inv_inventory_items items
+--     ON items.INVENTORY_ITEM_ID =
+    <trim prefix="WHERE" prefixOverrides="AND |OR ">
+
+        <!-- 公司名称 -->
+        <if test="companyId != null">
+            AND companys.COMPANY_ID = #{companyId}
+        </if>
+        <!-- 客户名称 -->
+        <if test="customerId != null">
+            AND customers.customer_id = #{customerId}
+        </if>
+        <!-- 订单销售号 -->
+        <if test="orderNumber != null">
+            AND headers.order_number = #{orderNumber}
+        </if>
+
+        <!-- 订单状态 -->
+        <if test="orderStatus != null">
+            AND headers.order_status = #{orderStatus}
+        </if>
+        <!--判断其物料ID值-->
+        <if test="inventoryItemId != null">
+            AND headers.header_id in (
+            select orderLines.header_id from hap_om_order_lines orderLines
+            where orderLines.INVENTORY_ITEM_ID = #{inventoryItemId}
+            )
+        </if>
+    </trim>
+
+    </select>
+
+</mapper>

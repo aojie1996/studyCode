@@ -1,0 +1,603 @@
+<#include "../include/header.html">
+    <script src="https://cdn.bootcss.com/html2canvas/0.5.0-beta4/html2canvas.js"></script>
+    <script src="https://cdn.bootcss.com/jspdf/1.4.0/jspdf.debug.js"></script>
+    <script type="text/javascript">
+        //银行主键
+        var headerId = '${RequestParameters.headerId!0}';
+
+        //查看标志
+        var queryFlag = '${RequestParameters.queryFlag!}';
+
+        var viewModel = Hap.createGridViewModel("#tabstrip", {
+            model: {},
+            saveFunction: function () {
+                //调用表单校验器中必输字段
+                var b = $("#myForm").data("kendoValidator").validate();
+                if (!b) {
+                    Hap.showToast({
+                        type: "info",
+                        message: $l('<@spring.message "头上存在必输字段未输！"/>')
+                    })
+                    return;
+                }
+                if(headerId==0){
+                     viewModel.model.set('_status','add');
+                }
+                Hap.submitForm({
+                    url: '${base.contextPath}/hap/om/order/headers/submit',
+                    formModel: viewModel.model,
+                    grid: {"omOrderLinesList": $("#tabstrip-1")},
+                    success: function (data) {
+                        if (data.success) {
+                            if (!headerId || headerId == 0) {
+                                //回写主键
+                                headerId = data.rows[0].headerId;
+                            }
+                         //   $('#tabstrip-1').data('kendoGrid').dataSource.read();
+                        }
+                    },
+                    failure: function (arg) {
+                        Hap.showToast({
+                            type: "error",
+                            message: '<@spring.message "保存失败"/>'
+                        });
+                    }
+                });
+            },
+            //新增一行
+            createRow:function () {
+                $("#tabstrip-1").data("kendoGrid").addRow();
+            },
+            //删除一行数据
+            deleteRow:function () {
+                Hap.deleteGridSelection({
+                    grid: $(selector)
+                });
+            },
+            //
+
+            deleteHeadAndLine:function () {
+
+                Hap.submitForm({
+                    url: '${base.contextPath}/hap/om/order/headers/remove',
+                    formModel: viewModel.model,
+                    success: function (data) {
+                        if (data.success) {
+                            $('#grid').data('kendoGrid').dataSource.read();
+                        }
+                    },
+                    failure: function (arg) {
+                        Hap.showToast({
+                            type: "error",
+                            message: '<@spring.message "删除失败"/>'
+                        });
+                    }
+                });
+                //刷新父页面
+                //window.parent.$('#grid').data('kendoGrid').dataSource.read();
+//                var win = parent.$("#newWin", parent.document).data("kendoWindow");
+//                win.refresh();
+//                win.close();
+                window.parent.location.reload();
+
+
+                //关闭当前页
+                window.parent.$('#newWin').data("kendoWindow").maximize().close();
+            },
+
+        });
+
+    </script>
+    <style>    /*表格标题居中显示*/
+    .k-grid th {
+        text-align: center !important;
+    }
+
+    /*表格列居中*/
+    .k-grid tr {
+        text-align: center !important;
+    } </style>
+<body>
+<div id="page-content">
+    <script src="${base.contextPath}/common/code?orderData=HAP_OM_ORDER_HEADERS" type="text/javascript"></script>
+    <div id="query-form" style="padding-bottom: 10px">
+        <form class="form-horizontal" id="myForm">
+            <!--第一行-->
+            <div class="row">
+                <!--订单编号 文本-->
+                <div class="col-xs-4">
+                    <div class="form-group">
+                        <label class="col-md-4 control-label"><@spring.message "订单编号"/></label>
+                        <div class="col-xs-8">
+                            <input id="orderNumber" required type="text" data-role="maskedtextbox"
+                                   style="float:left;width:150px;margin-right:5px;"
+                                   disabled="true"
+                                   data-bind="value:model.orderNumber"/>
+                        </div>
+                    </div>
+                </div>
+                <!--公司名称Lov-->
+                <div class="col-xs-4">
+                    <div class="form-group">
+                    <label class="col-md-4 control-label"><@spring.message "公司名称"/></label>
+                    <div class="col-xs-8">
+                        <input id="companyName" name="companyName" required type="text" data-bind="value:model.companyId,text:model.companyName"
+                               style="margin-right: 5px;width: 150px">
+                        <div style="position:absolute;z-index:2;left: 90%;top: -2px;">
+                            <span data-for="companyName" class="k-invalid-msg"></span>
+                        </div>
+                        <script>
+                            $("#companyName").kendoLov($.extend(${lovProvider.getLov(base.contextPath,base.locale,"HBI_DEMO_COMPANY_NAME")},{
+                                //在选定一项参数后，并移除客户lov的禁用效果
+                                select:function () {
+                                    $("#customerName").removeAttr("disabled");
+                                    $("#customerName").kendoLov($.extend(${lovProvider.getLov(base.contextPath,base.locale,"HBI_DEMO_CUSTOMER_NAME")}, {
+                                        query:function (e) {
+                                            e.param['companyId'] = viewModel.model.companyId;//传入限制参数
+                                        }
+                                    }));
+                                }
+                            }));
+                        </script>
+                    </div>
+                    </div>
+                </div>
+                <!--客户名称Lov-->
+                <div class="col-xs-4">
+                    <div class="form-group">
+                    <label class="col-md-4 control-label"><@spring.message "客户名称"/></label>
+                    <div class="col-xs-8">
+                        <input id="customerName" name="customerName" required type="text" data-bind="value:model.customerId,text:model.customerName"
+                               style="margin-right: 5px;width: 150px">
+                        <div style="position:absolute;z-index:2;left: 90%;top: -2px;">
+                            <span data-for="customerName" class="k-invalid-msg"></span>
+                        </div>
+                        <script>
+//                            window.onload= function () {
+//                                setCustomerStatus();
+//                            }
+//                            function setCustomerStatus(){
+//                                if(viewModel.model.companyId==undefined){
+//                                    $("#customerName").attr("disabled",true);
+//                                    $("#customerName").kendoLov($.extend(${lovProvider.getLov(base.contextPath,base.locale,"HBI_DEMO_CUSTOMER_NAME")}, {}))
+//                                }
+//                            }
+$("#customerName").kendoLov($.extend(${lovProvider.getLov(base.contextPath,base.locale,"HBI_DEMO_CUSTOMER_NAME")}, {}))
+                        </script>
+                    </div>
+                    </div>
+                </div>
+            </div>
+            <!--第二行-->
+            <div class="row">
+                <!--订单日期-->
+                <div class="col-xs-4">
+                    <div class="form-group">
+                        <label class="col-md-4 control-label"><@spring.message "订单日期"/></label>
+                        <div class="col-xs-8">
+                            <input id="orderDate" name="orderDate" required style="width: 150px;margin-right: 5px;"
+                                   data-bind="value:model.orderDate">
+                        </div>
+                        <div style="position:absolute;z-index:2;left: 90%;top: -2px;">
+                            <span data-for="orderDate" class="k-invalid-msg"></span>
+                        </div>
+                        <script>
+                            $("#orderDate").kendoDatePicker({format: "{0:yyyy-MM-dd}",}).data("kendoDatePicker");
+                        </script>
+                    </div>
+                </div>
+                <!--订单总金额 文本-->
+                <div class="col-xs-4">
+                    <div class="form-group">
+                        <label class="col-md-4 control-label"><@spring.message "订单总金额"/></label>
+                        <div class="col-xs-8">
+                            <input id="allPrice" name="allPrice" type="text" data-role="maskedtextbox"
+                                   disabled="true"
+                                   placeholder="订单金额自动计算"
+                                   style="float:left;width:150px;margin-right:5px;"
+                                   data-bind="value:model.allPrice"/>
+                        </div>
+                    </div>
+                </div>
+                <!--订单状态 下拉框-->
+                <div class="col-xs-4">
+                    <div class="form-group">
+                    <label class="col-md-4 control-label"><@spring.message "订单状态"/></label>
+                    <div class="col-xs-8">
+                        <input id="orderStatus" type="text" style="width:150px;margin-right:5px;"  data-bind="value:model.orderStatus">
+                    </div>
+                    <script>
+                        $("#orderStatus").kendoComboBox({
+                            dataSource: orderData,
+                            valuePrimitive: true,
+                            dataTextField: "meaning",
+                            dataValueField: "value"
+                        });
+                        var combobox = $("#orderStatus").data("kendoComboBox");
+                        var headerId = '${RequestParameters.headerId}';
+                        if(headerId==0){
+//                            combobox.select(function (dataItem) {
+//                                //return dataItem.value==="NEW";
+//
+//                            });
+                            viewModel.model.set("orderStatus","NEW");
+                            //设置订单日期为当前日期
+                            var nowDate = new Date();
+                            viewModel.model.orderDate = nowDate;
+                        }
+                    </script>
+                    </div>
+                </div>
+
+            </div>
+            <!--第三行-->
+            <div class="row">
+                    <div class="col-xs-8" id="toolbar">
+                        <span class="btn btn-default k-grid-add" style="float:left;margin-right:5px;" data-bind="click:createRow"><@spring.message "hap.new"/></span>
+                        <span class="btn btn-default k-grid-save-changes" data-bind="click:saveFunction" style="float:left;margin-right:5px;"><@spring.message "hap.save"/></span>
+                        <span data-bind="click:remove" class="btn btn-default" style="float:left;margin-right:5px;"><@spring.message "hap.delete"/></span>
+                        <span id="submit" class="btn btn-default" style="float:left;margin-right:5px;"><@spring.message "提交"/></span>
+                        <span id="approve" class="btn btn-default" style="float:left;margin-right:5px;"><@spring.message "审阅"/></span>
+                        <span id="reject" class="btn btn-default" style="float:left;margin-right:5px;"><@spring.message "拒绝"/></span>
+                        <span data-bind="click:deleteHeadAndLine" class="btn btn-default" style="float:left;margin-right:5px;"><@spring.message "整单删除"/></span>
+                        <span onclick="printPDF()" class="btn btn-default" style="float:left;margin-right:5px;"><@spring.message "单据打印"/></span>
+                        <span class="btn btn-default" style="float:left;margin-right:5px;"><@spring.message "返回"/></span>
+                    </div>
+                <script>kendo.bind($('#toolbar'), viewModel);</script>
+                <div class="col-xs-4">
+                </div>
+            </div>
+        </form>
+    </div>
+    <script>kendo.bind($('#query-form'), viewModel);</script>
+    <div style="clear:both">
+        <div id="tabstrip">
+            <ul>
+                <li class="k-state-active">主要</li>
+                <li>其他</li>
+            </ul>
+            <div id="mainGrid"></div>
+            <div id="otherGrid"></div>
+        </div>
+        <!--<div id="grid"></div>-->
+    </div>
+
+</div>
+
+<script type="text/javascript">
+    //初始化头部数据
+    if (headerId > 0) {
+        Hap.initEnterQuery('#query-form', viewModel.query);
+        //如果存在headerId赋默认值
+        viewModel.model.set("headerId", headerId);
+        //获取头数据
+        $.ajax({
+            type: "post",
+            url: "${base.contextPath}/hap/om/order/headers/query",
+            data: {headerId: headerId},
+            success: function (json) {
+                var row = json.rows[0] || {};
+                for (var k in row) {
+                    viewModel.model.set(k, row[k]);
+                }
+            }
+        });
+    }
+
+    Hap.initEnterQuery('#query-form', viewModel.query);
+
+    $("#tabstrip").kendoTabStrip({
+        animation: false,
+        height:'100%'
+
+    }).data("kendoTabStrip");
+
+    var BaseUrl = _basePath;
+    dataSource = new kendo.data.DataSource({
+        transport: {
+            read: {
+                url: BaseUrl + "/hap/om/order/lines/query",
+                type: "POST",
+                dataType: "json"
+            },
+            update: {
+                url: BaseUrl + "/hap/om/order/lines/submit",
+                type: "POST",
+                contentType: "application/json"
+            },
+            destroy: {
+                url: BaseUrl + "/hap/om/order/lines/remove",
+                type: "POST",
+                contentType: "application/json"
+            },
+            create: {
+                url: BaseUrl + "/hap/om/order/lines/submit",
+                type: "POST",
+                contentType: "application/json"
+            },
+            parameterMap: function (options, type) {
+                if (type !== "read" && options.models) {
+                    var datas = Hap.prepareSubmitParameter(options, type)
+                    return kendo.stringify(datas);
+                } else if (type === "read") {
+                    return Hap.prepareQueryParameter({"headerId": headerId}, options);
+                }
+            }
+        },
+        batch: true,
+        serverPaging: true,
+        pageSize: 10,
+        schema: {
+            data: 'rows',
+            total: 'total',
+            model: {
+                id: "lineId",
+                fields: {
+                    itemCode: { validation: {required: true}},
+                    orderdQuantity:{ validation: {required: true}},
+                    unitSellingPrice: { validation: {required: true}},
+                    //设置为不可编辑
+                    orderQuantityUom: {editable: false},
+                    itemDescription: {editable: false},
+                    allPrice:{editable:false},
+
+                    //设置行自增
+                    lineNumber: {
+                        editable: false,
+                        defaultValue: function () {
+                            return setLineNumber() + 1;
+                        },
+                        validation: {required: true},
+                    },
+
+                }
+            }
+        }
+    });
+    //设置行列自增
+    function setLineNumber(){
+        var record = 0;
+        for (var i = 0; i < dataSource.data().length; i++) {
+            if (dataSource.data()[i].lineNumber > record) {
+                record = dataSource.data()[i].lineNumber;
+            }
+        }
+        return record;
+    }
+
+    $("#tabstrip-1").kendoGrid({
+        dataSource: dataSource,
+        resizable: true,
+        scrollable: true,
+        navigatable: false,
+        selectable: 'multiple, rowbox',
+        dataBound: function () {
+            if (parent.autoResizeIframe) {
+                parent.autoResizeIframe('${RequestParameters.functionCode!}')
+            }
+        },
+        pageable: {
+            pageSizes: [5, 10, 20, 50],
+            refresh: true,
+            buttonCount: 5
+        },
+        columns: [
+                    {
+                field: "lineNumber",
+                title: '<@spring.message "omorderlines.linenumber"/>',
+                width: 120
+            },
+            {
+                field: "itemCode",
+                title: '<@spring.message "omorderlines.itemcode"/>',
+                width: 120,
+                editor : function (container, options) {
+                    $('<input name="' + options.field + '"/>').appendTo(container).kendoLov($.extend(${lovProvider.getLov(base.contextPath,base.locale,"HBI_DEMO_ITEMCODE")}, {
+                        select: function(e) {
+                            var getItemCode = e.item.itemCode;
+                            var getItemDescription = e.item.itemDescription;
+                            var getItemUom = e.item.itemUom;
+
+                            options.model.itemCode = getItemCode;
+                            options.model.itemDescription = getItemDescription;
+                            options.model.orderQuantityUom = getItemUom;
+                            options.model.inventoryItemId = e.item.inventoryItemId;
+                            $("#tabstrip-1").data("kendoGrid").refresh();
+                        }
+                    }));
+                }
+
+            },
+            {
+                field: "itemDescription",
+                title: '<@spring.message "omorderlines.itemdescription"/>',
+                width: 120,
+
+            },
+            {
+                field: "orderQuantityUom",
+                title: '<@spring.message "omorderlines.orderquantityuom"/>',
+                width: 120
+            },
+            {
+                field: "orderdQuantity",
+                title: '<@spring.message "omorderlines.orderdquantity"/>',
+                width: 120,
+                editor: function (container, options) {
+                    $('<input id="orderdQuantity" type="text" name="' + options.field + '"/>').appendTo(container);
+                }
+            },
+            {
+                field: "unitSellingPrice",
+                title: '<@spring.message "omorderlines.unitsellingprice"/>',
+                width: 120,
+                editor: function (container, options) {
+                    $('<input id="unitSellingPrice" type="text" name="' + options.field + '"/>').appendTo(container);
+                    $("#unitSellingPrice").kendoNumericTextBox({
+                        decimal:2,
+                        change: function () {
+                            if (options.model.orderdQuantity!=undefined) {
+                                container.next().html((options.model.unitSellingPrice * options.model.orderdQuantity).toFixed(2));
+                                $("#allPrice").val(getTheTotalPrice());
+                            }
+                        }
+                    });
+                }
+
+            },
+
+            {
+                field: "allPrice",
+                title: '<@spring.message "omorderlines.allprice"/>',
+                width: 120,
+                template: function (dataItem) {
+                    $("#allPrice").val(getTheTotalPrice);
+                    return  (dataItem.orderdQuantity * dataItem.unitSellingPrice).toFixed(2);
+                },
+            },
+            {
+                field: "description",
+                title: '<@spring.message "omorderlines.description"/>',
+                width: 120
+            },
+        ],
+        editable: queryFlag==1?false:true
+    });
+
+    $("#tabstrip-2").kendoGrid({
+        dataSource: dataSource,
+        resizable: true,
+        scrollable: true,
+        navigatable: false,
+        selectable: 'multiple, rowbox',
+        dataBound: function () {
+            if (parent.autoResizeIframe) {
+                parent.autoResizeIframe('${RequestParameters.functionCode!}')
+            }
+        },
+        pageable: {
+            pageSizes: [5, 10, 20, 50],
+            refresh: true,
+            buttonCount: 5
+        },
+        columns: [
+            {
+                field: "lineNumber",
+                title: '<@spring.message "omorderlines.linenumber"/>',
+                width: 50
+
+            },
+            {
+                field: "addition1",
+                title: '<@spring.message "附加信息1"/>',
+                width: 120
+            },
+            {
+                field: "addition2",
+                title: '<@spring.message "附加信息2"/>',
+                width: 120
+            },
+            {
+                field: "addition3",
+                title: '<@spring.message "附加信息3"/>',
+                width: 120
+            },
+            {
+                field: "addition4",
+                title: '<@spring.message "附加信息4"/>',
+                width: 120
+            },
+            {
+                field: "addition5",
+                title: '<@spring.message "附加信息5"/>',
+                width: 120
+            },
+        ],
+        editable: queryFlag==1?false:true
+    });
+
+    //form表单校验
+    window.onload=function () {
+        var validator = $("#myForm").kendoValidator({
+            messages: {
+                required: '<@spring.message "requiredField"/>',
+            },
+            rules: {}
+        }).data("kendoValidator");
+    }
+    if(queryFlag==1){
+        onlyView();
+    };
+    //得到所有订单的价格总和
+    function getTheTotalPrice() {
+        var totalPrice = 0;
+        for (var i = 0; i < dataSource.data().length; i++) {
+            totalPrice = totalPrice + dataSource.data()[i].orderdQuantity * dataSource.data()[i].unitSellingPrice;
+        }
+        return totalPrice;
+    }
+
+    //设置各个属性为只读状态
+    function onlyView() {
+        $("#orderNumber").attr("readonly", true).css("background", "#EEEEEE");
+        $("#companyName").attr("readonly", true).css("background", "#EEEEEE");
+        $("#customerName").attr("readonly", true).css("background", "#EEEEEE");
+        $("#orderDate").data("kendoDatePicker").readonly();
+        $("#orderDate").css("background", "#EEEEEE");
+        $("#allPrice").attr("readonly", true).css("background", "#EEEEEE");
+        $("#orderStatus").data("kendoComboBox").enable(false);
+    }
+
+
+    //pdf打印
+    function printPDF() {
+        html2canvas(
+            document.getElementById("page-content"), {
+                dpi: 172,//导出pdf的清晰度
+                onrendered: function (canvas) {
+
+                    var contentWidth = canvas.width;
+                    var contentHeight = canvas.height;
+
+                    //一页pdf显示html页面生成的canvas高度;
+                    var pageHeight = contentWidth / 592.28 * 841.89;
+
+                    //未生成pdf的html页面高度
+                    var leftHeight = contentHeight;
+
+                    //pdf页面偏移
+                    var position = 0;
+
+                    //html页面生成的canvas在pdf中图片的宽高（a4纸的尺寸[595.28,841.89]）
+                    var imgWidth = 595.28;
+                    var imgHeight = 592.28 / contentWidth * contentHeight;
+
+                    var pageData = canvas.toDataURL('image/jpeg', 1.0);
+                    var pdf = new jsPDF('', 'pt', 'a4');
+
+
+                    //有两个高度需要区分，一个是html页面的实际高度，和生成pdf的页面高度(841.89)
+                    //当内容未超过pdf一页显示的范围，无需分页
+                    if (leftHeight < pageHeight) {
+                        pdf.addImage(pageData, 'JPEG', 0, 0, imgWidth, imgHeight);
+                    } else {
+                        while (leftHeight > 0) {
+                            pdf.addImage(pageData, 'JPEG', 0, position, imgWidth, imgHeight)
+                            leftHeight -= pageHeight;
+                            position -= 841.89;
+                            //避免添加空白页
+                            if (leftHeight > 0) {
+                                pdf.addPage();
+                            }
+                        }
+                    }
+                    pdf.save('PDF文件.pdf');
+                },
+                //背景设为白色（默认为黑色）
+                background: "#fff"
+            });
+    }
+
+</script>
+</body>
+</html>
